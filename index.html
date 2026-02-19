@@ -1,254 +1,119 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultimate Match 3</title>
+    <title>Ultimate Match 3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body{
+            margin:0;
+            font-family:Arial;
+            background:#1e3a5f;
+            text-align:center;
+            color:white;
+        }
 
-<style>
-body{
-    margin:0;
-    font-family:Arial;
-    text-align:center;
-    background:linear-gradient(45deg,#141e30,#243b55);
-    color:white;
-}
+        h1{
+            margin-top:20px;
+        }
 
-h1{margin-top:15px;}
+        .info{
+            display:flex;
+            justify-content:space-around;
+            margin:10px;
+            font-size:18px;
+        }
 
-#info{
-    display:flex;
-    justify-content:space-around;
-    margin:10px;
-    font-size:16px;
-}
+        .board{
+            width:320px;
+            margin:20px auto;
+            display:grid;
+            grid-template-columns:repeat(8,40px);
+            gap:5px;
+        }
 
-.grid{
-    width:320px;
-    margin:20px auto;
-    display:grid;
-    grid-template-columns:repeat(8,40px);
-    grid-gap:4px;
-}
+        .cell{
+            width:40px;
+            height:40px;
+            border-radius:8px;
+            cursor:pointer;
+        }
 
-.cell{
-    width:40px;
-    height:40px;
-    border-radius:8px;
-    cursor:pointer;
-    transition:0.2s;
-}
+        button{
+            padding:10px 20px;
+            font-size:16px;
+            border:none;
+            border-radius:8px;
+            background:orange;
+            margin-bottom:20px;
+        }
 
-.cell:active{
-    transform:scale(0.9);
-}
-
-button{
-    padding:10px 20px;
-    border:none;
-    border-radius:8px;
-    background:orange;
-    font-size:16px;
-    margin-bottom:20px;
-}
-</style>
+        section{
+            padding:20px;
+            background:white;
+            color:black;
+            margin-top:20px;
+        }
+    </style>
 </head>
 
 <body>
 
 <h1>Ultimate Match 3</h1>
 
-<div id="info">
-    <div id="score">Score: 0</div>
-    <div id="timer">Time: 60</div>
-    <div id="level">Level: 1</div>
+<div class="info">
+    <div>Score: <span id="score">0</span></div>
+    <div>Time: <span id="timer">60</span></div>
+    <div>Level: <span id="level">1</span></div>
 </div>
 
-<p id="highscore">High Score: 0</p>
+<div class="board" id="board"></div>
 
-<div class="grid" id="grid"></div>
 <button onclick="restartGame()">Restart</button>
 
+<section>
+    <h2>About</h2>
+    <p>This is a simple Match 3 puzzle game built with HTML, CSS and JavaScript.</p>
+
+    <h2>Contact</h2>
+    <p>For feedback please contact: <b>yourname@gmail.com</b></p>
+
+    <h2>Privacy Policy</h2>
+    <p>We do not collect any personal data. This game runs locally in your browser.</p>
+</section>
+
 <script>
-const width = 8;
-const colors = ["red","blue","green","yellow","purple"];
-
-let squares = [];
-let score = 0;
-let timeLeft = 60;
-let level = 1;
-let firstClick = null;
-let gameActive = true;
-let timerInterval = null;
-
-const grid = document.getElementById("grid");
-let highScore = localStorage.getItem("highScore") || 0;
-document.getElementById("highscore").innerText="High Score: "+highScore;
-
-// Create Board
-function createBoard(){
-    grid.innerHTML="";
-    squares=[];
-
-    for(let i=0;i<width*width;i++){
-        const square=document.createElement("div");
-        square.classList.add("cell");
-        square.style.backgroundColor=randomColor();
-        square.dataset.bomb="false";
-
-        grid.appendChild(square);
-        squares.push(square);
-
-        square.addEventListener("click",handleClick);
-    }
-}
+let colors=["red","yellow","green","blue","purple"];
+let board=document.getElementById("board");
+let score=0;
+let timeLeft=60;
+let level=1;
+let gameActive=true;
 
 function randomColor(){
     return colors[Math.floor(Math.random()*colors.length)];
 }
 
-// Click
-function handleClick(){
-    if(!gameActive) return;
-
-    if(this.dataset.bomb==="true"){
-        explodeBomb(this);
-        return;
-    }
-
-    if(!firstClick){
-        firstClick=this;
-        this.style.border="2px solid white";
-    }else{
-        let secondClick=this;
-        firstClick.style.border="none";
-
-        swapColors(firstClick,secondClick);
-
-        if(!checkMatches()){
-            swapColors(firstClick,secondClick);
-        }
-
-        firstClick=null;
-    }
-}
-
-// Swap
-function swapColors(a,b){
-    let temp=a.style.backgroundColor;
-    a.style.backgroundColor=b.style.backgroundColor;
-    b.style.backgroundColor=temp;
-}
-
-// Check Matches
-function checkMatches(){
-    let match=false;
-
-    // Row match 3
+function createBoard(){
+    board.innerHTML="";
     for(let i=0;i<64;i++){
-        if(i%width > 5) continue;
-
-        let row=[i,i+1,i+2];
-        let color=squares[i].style.backgroundColor;
-
-        if(color && row.every(index=>squares[index].style.backgroundColor===color)){
-            row.forEach(index=>squares[index].style.backgroundColor="");
-            score+=10*level;
-            match=true;
-        }
-    }
-
-    // Column match 3
-    for(let i=0;i<48;i++){
-        let col=[i,i+width,i+width*2];
-        let color=squares[i].style.backgroundColor;
-
-        if(color && col.every(index=>squares[index].style.backgroundColor===color)){
-            col.forEach(index=>squares[index].style.backgroundColor="");
-            score+=10*level;
-            match=true;
-        }
-    }
-
-    // Bomb match 4 row
-    for(let i=0;i<64;i++){
-        if(i%width > 4) continue;
-
-        let row=[i,i+1,i+2,i+3];
-        let color=squares[i].style.backgroundColor;
-
-        if(color && row.every(index=>squares[index].style.backgroundColor===color)){
-            squares[i+1].dataset.bomb="true";
-            squares[i+1].innerHTML="💣";
-            score+=40*level;
-            match=true;
-        }
-    }
-
-    updateScore();
-
-    if(match){
-        setTimeout(refillBoard,200);
-    }
-
-    return match;
-}
-
-function explodeBomb(square){
-    let index=squares.indexOf(square);
-    let neighbors=[index,index-1,index+1,index-width,index+width];
-
-    neighbors.forEach(i=>{
-        if(squares[i]){
-            squares[i].style.backgroundColor="";
-            squares[i].innerHTML="";
-            squares[i].dataset.bomb="false";
-        }
-    });
-
-    score+=50;
-    updateScore();
-    setTimeout(refillBoard,200);
-}
-
-function refillBoard(){
-    squares.forEach(square=>{
-        if(square.style.backgroundColor===""){
-            square.style.backgroundColor=randomColor();
-            square.innerHTML="";
-            square.dataset.bomb="false";
-        }
-    });
-}
-
-function updateScore(){
-    document.getElementById("score").innerText="Score: "+score;
-
-    if(score>=level*300){
-        level++;
-        document.getElementById("level").innerText="Level: "+level;
+        let cell=document.createElement("div");
+        cell.classList.add("cell");
+        cell.style.background=randomColor();
+        board.appendChild(cell);
     }
 }
 
 function startTimer(){
-    if(timerInterval) clearInterval(timerInterval);
-
-    timerInterval=setInterval(()=>{
-        if(!gameActive) return;
-
+    let timer=setInterval(function(){
+        if(!gameActive){
+            clearInterval(timer);
+            return;
+        }
         timeLeft--;
-        document.getElementById("timer").innerText="Time: "+timeLeft;
-
+        document.getElementById("timer").innerText=timeLeft;
         if(timeLeft<=0){
             gameActive=false;
-
-            if(score>highScore){
-                highScore=score;
-                localStorage.setItem("highScore",score);
-                document.getElementById("highscore").innerText="High Score: "+score;
-            }
-
-            alert("Game Over! Final Score: "+score);
-            clearInterval(timerInterval);
+            alert("Game Over! Score: "+score);
         }
     },1000);
 }
@@ -258,11 +123,9 @@ function restartGame(){
     timeLeft=60;
     level=1;
     gameActive=true;
-
-    document.getElementById("score").innerText="Score: 0";
-    document.getElementById("timer").innerText="Time: 60";
-    document.getElementById("level").innerText="Level: 1";
-
+    document.getElementById("score").innerText=score;
+    document.getElementById("timer").innerText=timeLeft;
+    document.getElementById("level").innerText=level;
     createBoard();
     startTimer();
 }
@@ -270,42 +133,6 @@ function restartGame(){
 createBoard();
 startTimer();
 </script>
-<hr style="margin-top:40px">
 
-<h2>About Ultimate Match 3</h2>
-<p>
-Ultimate Match 3 is a fun and addictive puzzle game where players match
-three or more blocks of the same color to score points. The goal is to
-score as high as possible before time runs out.
-</p>
-
-<h2>How to Play</h2>
-<ul>
-<li>Tap or click on blocks to swap them.</li>
-<li>Match 3 or more same colored blocks.</li>
-<li>Earn points and beat your high score.</li>
-<li>Advance levels by scoring more points.</li>
-</ul>
-
-<h2>Tips & Tricks</h2>
-<ul>
-<li>Look for combo matches.</li>
-<li>Plan your moves carefully.</li>
-<li>Focus on bigger matches for higher scores.</li>
-</ul>
-
-<h2>Contact</h2>
-<p>
-If you have any questions, suggestions, or feedback, please contact us at:
-<br>
-<b>yourname@gmail.com</b>
-</p>
-
-<h2>Privacy Policy</h2>
-<p>
-We respect your privacy. This website does not collect any personal data.
-In the future, advertisements may use cookies to provide better user experience.
-By using this site, you agree to our privacy policy.
-    </p>
 </body>
-</html>
+    </html>
