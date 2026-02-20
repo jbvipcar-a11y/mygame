@@ -3,57 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Cool Game</title>
+<title>Darling Pro Game</title>
 
 <style>
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #0f172a, #1e3a8a);
-  color: white;
+  background: linear-gradient(135deg, #ff758c, #ff7eb3);
   text-align: center;
+  color: white;
 }
 
 .container {
-  margin-top: 60px;
+  margin-top: 40px;
 }
 
 h1 {
-  font-size: 40px;
+  font-size: 32px;
 }
 
 .score-box {
-  font-size: 22px;
-  margin: 20px;
+  margin: 10px;
   padding: 10px 20px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.2);
   display: inline-block;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
 }
 
 button {
   padding: 15px 30px;
   font-size: 18px;
   border: none;
-  border-radius: 12px;
-  background: linear-gradient(45deg, #6366f1, #22d3ee);
+  border-radius: 25px;
+  background: #ff4e91;
   color: white;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
   transition: 0.3s;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
 button:hover {
-  transform: scale(1.08);
+  transform: scale(1.1);
 }
 
-#gameArea {
+#gameArea, #gameOver {
   display: none;
 }
 
-#gameOver {
-  display: none;
+.tap-btn {
   margin-top: 20px;
 }
 </style>
@@ -63,40 +60,50 @@ button:hover {
 
 <div class="container">
 
-<h1>🔥 Click Master 🔥</h1>
+<h1>💖 Darling Pro Game 💖</h1>
 
 <div id="startScreen">
-  <button onclick="startGame()">Start Game</button>
+  <button onclick="startGame()">Start Game 💕</button>
 </div>
 
 <div id="gameArea">
   <div class="score-box">Score: <span id="score">0</span></div>
-  <br><br>
-  <button onclick="addScore()">Tap Me!</button>
+  <div class="score-box">Time: <span id="time">15</span></div>
+  <div class="score-box">High Score: <span id="highScore">0</span></div>
+  <br>
+  <button class="tap-btn" onclick="addScore()">Tap Me 💓</button>
 </div>
 
 <div id="gameOver">
-  <h2>Game Over!</h2>
+  <h2>Game Over 💔</h2>
   <p>Your Score: <span id="finalScore"></span></p>
-  <button onclick="restartGame()">Play Again</button>
+  <button onclick="restartGame()">Play Again 💞</button>
 </div>
 
 </div>
 
 <script>
 let score = 0;
-let timeLeft = 10;
+let timeLeft = 15;
 let timer;
+let highScore = localStorage.getItem("highScore") || 0;
+
+document.getElementById("highScore").innerText = highScore;
 
 function startGame() {
   document.getElementById("startScreen").style.display = "none";
+  document.getElementById("gameOver").style.display = "none";
   document.getElementById("gameArea").style.display = "block";
+
   score = 0;
-  timeLeft = 10;
+  timeLeft = 15;
   document.getElementById("score").innerText = score;
+  document.getElementById("time").innerText = timeLeft;
 
   timer = setInterval(function() {
     timeLeft--;
+    document.getElementById("time").innerText = timeLeft;
+
     if(timeLeft <= 0) {
       endGame();
     }
@@ -106,6 +113,10 @@ function startGame() {
 function addScore() {
   score++;
   document.getElementById("score").innerText = score;
+
+  if(score % 10 === 0) {
+    timeLeft += 3; // bonus time
+  }
 }
 
 function endGame() {
@@ -113,13 +124,19 @@ function endGame() {
   document.getElementById("gameArea").style.display = "none";
   document.getElementById("gameOver").style.display = "block";
   document.getElementById("finalScore").innerText = score;
+
+  if(score > highScore) {
+    highScore = score;
+    localStorage.setItem("highScore", highScore);
+  }
+
+  document.getElementById("highScore").innerText = highScore;
 }
 
 function restartGame() {
-  document.getElementById("gameOver").style.display = "none";
   startGame();
 }
 </script>
 
 </body>
-    </html>
+                                                </html>
