@@ -3,256 +3,193 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Click Master Ultimate</title>
+<title>Click Master Ultra</title>
 
 <style>
 body{
   margin:0;
-  font-family:Arial, sans-serif;
-  background:linear-gradient(135deg,#141e30,#243b55);
-  color:white;
+  font-family:Arial;
   text-align:center;
+  transition:0.5s;
+}
+
+.dark{
+  background:#111;
+  color:white;
+}
+
+.neon{
+  background:black;
+  color:#0ff;
 }
 
 .container{ padding:20px; }
 
-h1{ font-size:28px; }
-
 button{
-  padding:14px 30px;
-  font-size:18px;
-  border:none;
-  border-radius:30px;
-  cursor:pointer;
-  background:linear-gradient(45deg,#00c6ff,#0072ff);
-  color:white;
-  transition:0.2s;
-}
-
-button:active{ transform:scale(0.9); }
-
-.stats{ margin:10px; }
-
-.stat{
-  display:inline-block;
+  padding:12px 25px;
   margin:5px;
-  padding:8px 15px;
-  border-radius:15px;
-  background:rgba(255,255,255,0.15);
+  border:none;
+  border-radius:25px;
+  cursor:pointer;
+  font-size:16px;
 }
 
-.progress-bar{
-  width:80%;
-  height:15px;
-  background:rgba(255,255,255,0.2);
-  margin:15px auto;
+.mainBtn{
+  font-size:20px;
+  background:#00c6ff;
+  color:white;
+}
+
+.bomb{ background:red; color:white; }
+.fake{ background:gray; color:white; }
+
+.shop{
+  background:rgba(255,255,255,0.1);
+  padding:10px;
   border-radius:10px;
-  overflow:hidden;
-}
-
-.progress{
-  height:100%;
-  width:100%;
-  background:lime;
-  transition:width 1s linear;
+  margin-top:10px;
 }
 
 .hidden{ display:none; }
 
-#tapBtn{
-  font-size:22px;
-  margin-top:20px;
+.floating{
+  position:absolute;
+  font-weight:bold;
+  animation:float 1s forwards;
 }
 
-.power{ background:orange !important; }
-
-.leaderboard{
-  margin-top:15px;
-  background:rgba(255,255,255,0.1);
-  padding:10px;
-  border-radius:10px;
+@keyframes float{
+  0%{ opacity:1; transform:translateY(0); }
+  100%{ opacity:0; transform:translateY(-50px); }
 }
 </style>
 </head>
 
-<body>
+<body class="dark">
 
 <div class="container">
 
-<h1>🔥 Click Master Ultimate 🔥</h1>
+<h2>🔥 Click Master Ultra 2.0 🔥</h2>
 
-<div id="startScreen">
-  <button onclick="countdown()">Start Game</button>
-</div>
+<p>Score: <span id="score">0</span> | Coins: <span id="coins">0</span> | Level: <span id="level">1</span></p>
+<p>High Score: <span id="high">0</span></p>
 
-<div id="countdown" class="hidden">
-  <h2 id="countText"></h2>
-</div>
+<button onclick="startGame()">Start</button>
+<button onclick="pauseGame()">Pause</button>
+<button onclick="toggleSound()">Sound</button>
+<button onclick="switchTheme()">Switch Theme</button>
 
 <div id="gameArea" class="hidden">
-
-<div class="stats">
-  <div class="stat">Score: <span id="score">0</span></div>
-  <div class="stat">Level: <span id="level">1</span></div>
-  <div class="stat">High: <span id="highScore">0</span></div>
-  <div class="stat">Combo: <span id="combo">0</span></div>
+  <button id="mainBtn" class="mainBtn" onclick="addScore()">TAP!</button>
+  <button id="bombBtn" class="bomb hidden" onclick="bomb()">💣</button>
+  <button id="fakeBtn" class="fake hidden" onclick="fake()">Fake</button>
 </div>
 
-<div class="progress-bar">
-  <div class="progress" id="progress"></div>
-</div>
-
-<button id="tapBtn" onclick="addScore()">TAP FAST!</button>
-<br><br>
-<button onclick="pauseGame()">Pause</button>
-
-</div>
-
-<div id="gameOver" class="hidden">
-  <h2>Game Over!</h2>
-  <p>Your Score: <span id="finalScore"></span></p>
-  <p id="newRecord" style="color:yellow;"></p>
-  <button onclick="restart()">Play Again</button>
-
-  <div class="leaderboard">
-    <h3>🏆 Top 5</h3>
-    <ol id="board"></ol>
-  </div>
+<div class="shop">
+<h3>🛒 Shop</h3>
+<button onclick="buyDouble()">Double Score (20 coins)</button>
 </div>
 
 </div>
 
 <script>
-let score=0, level=1, combo=0;
-let timeLeft=15, maxTime=15;
-let timer;
+let score=0, coins=0, level=1;
+let high=localStorage.getItem("high")||0;
+let soundOn=true;
 let paused=false;
-let powerMode=false;
+let doubleScore=false;
 
-let highScore=localStorage.getItem("highScore")||0;
-document.getElementById("highScore").innerText=highScore;
-
-function countdown(){
-  document.getElementById("startScreen").classList.add("hidden");
-  document.getElementById("countdown").classList.remove("hidden");
-  let count=3;
-  let c=setInterval(()=>{
-    document.getElementById("countText").innerText=count;
-    count--;
-    if(count<0){
-      clearInterval(c);
-      document.getElementById("countdown").classList.add("hidden");
-      startGame();
-    }
-  },1000);
-}
+document.getElementById("high").innerText=high;
 
 function startGame(){
-  score=0; level=1; combo=0;
-  maxTime=15; timeLeft=maxTime;
-  paused=false; powerMode=false;
-  document.getElementById("tapBtn").classList.remove("power");
-  updateUI();
+  score=0;
   document.getElementById("gameArea").classList.remove("hidden");
-  startTimer();
-}
-
-function startTimer(){
-  clearInterval(timer);
-  timer=setInterval(()=>{
-    if(!paused){
-      timeLeft--;
-      updateProgress();
-      if(timeLeft<=0) endGame();
-    }
-  },1000);
-}
-
-function updateProgress(){
-  let percent=(timeLeft/maxTime)*100;
-  document.getElementById("progress").style.width=percent+"%";
+  moveButtons();
 }
 
 function addScore(){
   if(paused) return;
 
-  combo++;
-  let add=powerMode?2:1;
+  let add=doubleScore?2:1;
   score+=add;
+  coins++;
+  level=Math.floor(score/10)+1;
 
-  if(combo%10===0){
-    powerMode=true;
-    document.getElementById("tapBtn").classList.add("power");
-    setTimeout(()=>{
-      powerMode=false;
-      document.getElementById("tapBtn").classList.remove("power");
-    },3000);
+  if(score>high){
+    high=score;
+    localStorage.setItem("high",high);
   }
 
-  if(score%20===0){
-    level++;
-    maxTime-=1;
-    if(maxTime<5) maxTime=5;
-    timeLeft=maxTime;
-  }
+  updateUI();
+  showFloating("+ "+add);
+}
 
-  playSound();
+function bomb(){
+  alert("💥 Bomb! Game Over");
+  resetGame();
+}
+
+function fake(){
+  score--;
+  if(score<0) score=0;
   updateUI();
 }
 
-function updateUI(){
-  document.getElementById("score").innerText=score;
-  document.getElementById("level").innerText=level;
-  document.getElementById("combo").innerText=combo;
+function resetGame(){
+  score=0;
+  document.getElementById("gameArea").classList.add("hidden");
+  updateUI();
 }
 
 function pauseGame(){
   paused=!paused;
 }
 
-function endGame(){
-  clearInterval(timer);
-  document.getElementById("gameArea").classList.add("hidden");
-  document.getElementById("gameOver").classList.remove("hidden");
-  document.getElementById("finalScore").innerText=score;
+function toggleSound(){
+  soundOn=!soundOn;
+  alert(soundOn?"Sound ON":"Sound OFF");
+}
 
-  if(score>highScore){
-    highScore=score;
-    localStorage.setItem("highScore",highScore);
-    document.getElementById("newRecord").innerText="🎉 New Record!";
+function switchTheme(){
+  document.body.classList.toggle("neon");
+  document.body.classList.toggle("dark");
+}
+
+function buyDouble(){
+  if(coins>=20){
+    coins-=20;
+    doubleScore=true;
+    alert("Double Score Activated!");
+  }else{
+    alert("Not enough coins!");
   }
-
-  saveLeaderboard(score);
-  showLeaderboard();
+  updateUI();
 }
 
-function restart(){
-  document.getElementById("gameOver").classList.add("hidden");
-  countdown();
+function updateUI(){
+  document.getElementById("score").innerText=score;
+  document.getElementById("coins").innerText=coins;
+  document.getElementById("level").innerText=level;
+  document.getElementById("high").innerText=high;
 }
 
-function playSound(){
-  let audio=new Audio("https://www.soundjay.com/buttons/sounds/button-16.mp3");
-  audio.play();
+function moveButtons(){
+  setInterval(()=>{
+    if(!paused){
+      document.getElementById("bombBtn").classList.toggle("hidden");
+      document.getElementById("fakeBtn").classList.toggle("hidden");
+    }
+  },2000);
 }
 
-function saveLeaderboard(s){
-  let list=JSON.parse(localStorage.getItem("board"))||[];
-  list.push(s);
-  list.sort((a,b)=>b-a);
-  list=list.slice(0,5);
-  localStorage.setItem("board",JSON.stringify(list));
-}
-
-function showLeaderboard(){
-  let list=JSON.parse(localStorage.getItem("board"))||[];
-  let board=document.getElementById("board");
-  board.innerHTML="";
-  list.forEach(score=>{
-    let li=document.createElement("li");
-    li.innerText=score;
-    board.appendChild(li);
-  });
+function showFloating(text){
+  let div=document.createElement("div");
+  div.innerText=text;
+  div.className="floating";
+  div.style.left=(Math.random()*200+50)+"px";
+  div.style.top=(Math.random()*200+200)+"px";
+  document.body.appendChild(div);
+  setTimeout(()=>div.remove(),1000);
 }
 </script>
 
