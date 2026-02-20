@@ -3,55 +3,74 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Darling Pro Game</title>
+<title>Click Master Ultimate</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #ff758c, #ff7eb3);
-  text-align: center;
-  color: white;
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:linear-gradient(135deg,#141e30,#243b55);
+  color:white;
+  text-align:center;
 }
 
-.container {
-  margin-top: 40px;
+.container{ padding:20px; }
+
+h1{ font-size:28px; }
+
+button{
+  padding:14px 30px;
+  font-size:18px;
+  border:none;
+  border-radius:30px;
+  cursor:pointer;
+  background:linear-gradient(45deg,#00c6ff,#0072ff);
+  color:white;
+  transition:0.2s;
 }
 
-h1 {
-  font-size: 32px;
+button:active{ transform:scale(0.9); }
+
+.stats{ margin:10px; }
+
+.stat{
+  display:inline-block;
+  margin:5px;
+  padding:8px 15px;
+  border-radius:15px;
+  background:rgba(255,255,255,0.15);
 }
 
-.score-box {
-  margin: 10px;
-  padding: 10px 20px;
-  border-radius: 20px;
-  background: rgba(255,255,255,0.2);
-  display: inline-block;
+.progress-bar{
+  width:80%;
+  height:15px;
+  background:rgba(255,255,255,0.2);
+  margin:15px auto;
+  border-radius:10px;
+  overflow:hidden;
 }
 
-button {
-  padding: 15px 30px;
-  font-size: 18px;
-  border: none;
-  border-radius: 25px;
-  background: #ff4e91;
-  color: white;
-  cursor: pointer;
-  transition: 0.3s;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+.progress{
+  height:100%;
+  width:100%;
+  background:lime;
+  transition:width 1s linear;
 }
 
-button:hover {
-  transform: scale(1.1);
+.hidden{ display:none; }
+
+#tapBtn{
+  font-size:22px;
+  margin-top:20px;
 }
 
-#gameArea, #gameOver {
-  display: none;
-}
+.power{ background:orange !important; }
 
-.tap-btn {
-  margin-top: 20px;
+.leaderboard{
+  margin-top:15px;
+  background:rgba(255,255,255,0.1);
+  padding:10px;
+  border-radius:10px;
 }
 </style>
 </head>
@@ -60,83 +79,182 @@ button:hover {
 
 <div class="container">
 
-<h1>💖 Darling Pro Game 💖</h1>
+<h1>🔥 Click Master Ultimate 🔥</h1>
 
 <div id="startScreen">
-  <button onclick="startGame()">Start Game 💕</button>
+  <button onclick="countdown()">Start Game</button>
 </div>
 
-<div id="gameArea">
-  <div class="score-box">Score: <span id="score">0</span></div>
-  <div class="score-box">Time: <span id="time">15</span></div>
-  <div class="score-box">High Score: <span id="highScore">0</span></div>
-  <br>
-  <button class="tap-btn" onclick="addScore()">Tap Me 💓</button>
+<div id="countdown" class="hidden">
+  <h2 id="countText"></h2>
 </div>
 
-<div id="gameOver">
-  <h2>Game Over 💔</h2>
+<div id="gameArea" class="hidden">
+
+<div class="stats">
+  <div class="stat">Score: <span id="score">0</span></div>
+  <div class="stat">Level: <span id="level">1</span></div>
+  <div class="stat">High: <span id="highScore">0</span></div>
+  <div class="stat">Combo: <span id="combo">0</span></div>
+</div>
+
+<div class="progress-bar">
+  <div class="progress" id="progress"></div>
+</div>
+
+<button id="tapBtn" onclick="addScore()">TAP FAST!</button>
+<br><br>
+<button onclick="pauseGame()">Pause</button>
+
+</div>
+
+<div id="gameOver" class="hidden">
+  <h2>Game Over!</h2>
   <p>Your Score: <span id="finalScore"></span></p>
-  <button onclick="restartGame()">Play Again 💞</button>
+  <p id="newRecord" style="color:yellow;"></p>
+  <button onclick="restart()">Play Again</button>
+
+  <div class="leaderboard">
+    <h3>🏆 Top 5</h3>
+    <ol id="board"></ol>
+  </div>
 </div>
 
 </div>
 
 <script>
-let score = 0;
-let timeLeft = 15;
+let score=0, level=1, combo=0;
+let timeLeft=15, maxTime=15;
 let timer;
-let highScore = localStorage.getItem("highScore") || 0;
+let paused=false;
+let powerMode=false;
 
-document.getElementById("highScore").innerText = highScore;
+let highScore=localStorage.getItem("highScore")||0;
+document.getElementById("highScore").innerText=highScore;
 
-function startGame() {
-  document.getElementById("startScreen").style.display = "none";
-  document.getElementById("gameOver").style.display = "none";
-  document.getElementById("gameArea").style.display = "block";
-
-  score = 0;
-  timeLeft = 15;
-  document.getElementById("score").innerText = score;
-  document.getElementById("time").innerText = timeLeft;
-
-  timer = setInterval(function() {
-    timeLeft--;
-    document.getElementById("time").innerText = timeLeft;
-
-    if(timeLeft <= 0) {
-      endGame();
+function countdown(){
+  document.getElementById("startScreen").classList.add("hidden");
+  document.getElementById("countdown").classList.remove("hidden");
+  let count=3;
+  let c=setInterval(()=>{
+    document.getElementById("countText").innerText=count;
+    count--;
+    if(count<0){
+      clearInterval(c);
+      document.getElementById("countdown").classList.add("hidden");
+      startGame();
     }
-  }, 1000);
+  },1000);
 }
 
-function addScore() {
-  score++;
-  document.getElementById("score").innerText = score;
-
-  if(score % 10 === 0) {
-    timeLeft += 3; // bonus time
-  }
+function startGame(){
+  score=0; level=1; combo=0;
+  maxTime=15; timeLeft=maxTime;
+  paused=false; powerMode=false;
+  document.getElementById("tapBtn").classList.remove("power");
+  updateUI();
+  document.getElementById("gameArea").classList.remove("hidden");
+  startTimer();
 }
 
-function endGame() {
+function startTimer(){
   clearInterval(timer);
-  document.getElementById("gameArea").style.display = "none";
-  document.getElementById("gameOver").style.display = "block";
-  document.getElementById("finalScore").innerText = score;
-
-  if(score > highScore) {
-    highScore = score;
-    localStorage.setItem("highScore", highScore);
-  }
-
-  document.getElementById("highScore").innerText = highScore;
+  timer=setInterval(()=>{
+    if(!paused){
+      timeLeft--;
+      updateProgress();
+      if(timeLeft<=0) endGame();
+    }
+  },1000);
 }
 
-function restartGame() {
-  startGame();
+function updateProgress(){
+  let percent=(timeLeft/maxTime)*100;
+  document.getElementById("progress").style.width=percent+"%";
+}
+
+function addScore(){
+  if(paused) return;
+
+  combo++;
+  let add=powerMode?2:1;
+  score+=add;
+
+  if(combo%10===0){
+    powerMode=true;
+    document.getElementById("tapBtn").classList.add("power");
+    setTimeout(()=>{
+      powerMode=false;
+      document.getElementById("tapBtn").classList.remove("power");
+    },3000);
+  }
+
+  if(score%20===0){
+    level++;
+    maxTime-=1;
+    if(maxTime<5) maxTime=5;
+    timeLeft=maxTime;
+  }
+
+  playSound();
+  updateUI();
+}
+
+function updateUI(){
+  document.getElementById("score").innerText=score;
+  document.getElementById("level").innerText=level;
+  document.getElementById("combo").innerText=combo;
+}
+
+function pauseGame(){
+  paused=!paused;
+}
+
+function endGame(){
+  clearInterval(timer);
+  document.getElementById("gameArea").classList.add("hidden");
+  document.getElementById("gameOver").classList.remove("hidden");
+  document.getElementById("finalScore").innerText=score;
+
+  if(score>highScore){
+    highScore=score;
+    localStorage.setItem("highScore",highScore);
+    document.getElementById("newRecord").innerText="🎉 New Record!";
+  }
+
+  saveLeaderboard(score);
+  showLeaderboard();
+}
+
+function restart(){
+  document.getElementById("gameOver").classList.add("hidden");
+  countdown();
+}
+
+function playSound(){
+  let audio=new Audio("https://www.soundjay.com/buttons/sounds/button-16.mp3");
+  audio.play();
+}
+
+function saveLeaderboard(s){
+  let list=JSON.parse(localStorage.getItem("board"))||[];
+  list.push(s);
+  list.sort((a,b)=>b-a);
+  list=list.slice(0,5);
+  localStorage.setItem("board",JSON.stringify(list));
+}
+
+function showLeaderboard(){
+  let list=JSON.parse(localStorage.getItem("board"))||[];
+  let board=document.getElementById("board");
+  board.innerHTML="";
+  list.forEach(score=>{
+    let li=document.createElement("li");
+    li.innerText=score;
+    board.appendChild(li);
+  });
 }
 </script>
 
 </body>
-                                                </html>
+    </html>
