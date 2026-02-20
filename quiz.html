@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Quiz Master Elite</title>
+<style>
+body{
+font-family:Arial;
+background:#121212;
+color:white;
+text-align:center;
+padding:20px;
+}
+button,select{
+padding:8px;
+margin:5px;
+}
+#quizBox{
+background:white;
+color:black;
+padding:20px;
+border-radius:10px;
+max-width:400px;
+margin:auto;
+display:none;
+}
+button{
+display:block;
+width:80%;
+margin:8px auto;
+border:none;
+border-radius:5px;
+background:#444;
+color:white;
+}
+#nextBtn{display:none;background:green;}
+.shop{
+margin-top:20px;
+background:#1e1e1e;
+padding:10px;
+border-radius:10px;
+}
+.avatar{
+font-size:40px;
+}
+.locked{
+background:red;
+}
+.unlocked{
+background:green;
+}
+</style>
+</head>
+<body>
+
+<h1>🎮 Quiz Master ELITE</h1>
+
+<div>
+🏆 XP: <span id="xp">0</span> |
+💎 Coins: <span id="coins">0</span>
+</div>
+
+<div class="avatar">
+Current Avatar: <span id="currentAvatar">😀</span>
+</div>
+
+<hr>
+
+<h3>Levels</h3>
+<button id="level1" onclick="startGame(1)">Level 1</button>
+<button id="level2" class="locked" onclick="startGame(2)">Level 2 (Unlock 100 XP)</button>
+<button id="level3" class="locked" onclick="startGame(3)">Level 3 (Unlock 250 XP)</button>
+
+<hr>
+
+<h3>🛒 Coin Shop</h3>
+<div class="shop">
+<button onclick="buyAvatar('😎',50)">Buy 😎 (50 Coins)</button>
+<button onclick="buyAvatar('🤖',100)">Buy 🤖 (100 Coins)</button>
+<button onclick="buyAvatar('👑',200)">Buy 👑 (200 Coins)</button>
+</div>
+
+<hr>
+
+<div id="timer"></div>
+
+<div id="quizBox">
+<h2 id="question"></h2>
+<div id="answers"></div>
+<button id="nextBtn" onclick="nextQuestion()">Next</button>
+</div>
+
+<script>
+
+let xp = localStorage.getItem("xp") || 0;
+let coins = localStorage.getItem("coins") || 0;
+let avatar = localStorage.getItem("avatar") || "😀";
+
+document.getElementById("xp").innerText=xp;
+document.getElementById("coins").innerText=coins;
+document.getElementById("currentAvatar").innerText=avatar;
+
+const questions=[
+{q:"5+5=?",a:["8","9","10","11"],c:2},
+{q:"Capital of Japan?",a:["Seoul","Tokyo","Beijing","Bangkok"],c:1},
+{q:"Sun is a?",a:["Planet","Star","Rock","Gas"],c:1}
+];
+
+let currentIndex=0;
+let timer;
+let timeLeft;
+let currentLevel=1;
+
+function checkUnlock(){
+if(xp>=100){
+document.getElementById("level2").className="unlocked";
+}
+if(xp>=250){
+document.getElementById("level3").className="unlocked";
+}
+}
+checkUnlock();
+
+function startGame(level){
+if(level==2 && xp<100){alert("Level 2 Locked!");return;}
+if(level==3 && xp<250){alert("Level 3 Locked!");return;}
+
+currentLevel=level;
+currentIndex=0;
+document.getElementById("quizBox").style.display="block";
+loadQuestion();
+}
+
+function startTimer(){
+timeLeft= currentLevel==1?15:currentLevel==2?10:5;
+document.getElementById("timer").innerText="Time: "+timeLeft;
+
+timer=setInterval(()=>{
+timeLeft--;
+document.getElementById("timer").innerText="Time: "+timeLeft;
+if(timeLeft<=0){
+clearInterval(timer);
+nextQuestion();
+}
+},1000);
+}
+
+function loadQuestion(){
+clearInterval(timer);
+startTimer();
+
+let q=questions[currentIndex];
+document.getElementById("question").innerText=q.q;
+
+let answersDiv=document.getElementById("answers");
+answersDiv.innerHTML="";
+
+q.a.forEach((ans,i)=>{
+let btn=document.createElement("button");
+btn.innerText=ans;
+btn.onclick=()=>checkAnswer(i);
+answersDiv.appendChild(btn);
+});
+}
+
+function checkAnswer(i){
+clearInterval(timer);
+if(i===questions[currentIndex].c){
+xp=parseInt(xp)+10;
+coins=parseInt(coins)+5;
+}
+updateStats();
+document.getElementById("nextBtn").style.display="block";
+}
+
+function updateStats(){
+localStorage.setItem("xp",xp);
+localStorage.setItem("coins",coins);
+document.getElementById("xp").innerText=xp;
+document.getElementById("coins").innerText=coins;
+checkUnlock();
+}
+
+function nextQuestion(){
+currentIndex++;
+document.getElementById("nextBtn").style.display="none";
+
+if(currentIndex<questions.length){
+loadQuestion();
+}else{
+alert("Level Complete!");
+document.getElementById("quizBox").style.display="none";
+}
+}
+
+function buyAvatar(icon,price){
+if(coins>=price){
+coins-=price;
+avatar=icon;
+localStorage.setItem("avatar",avatar);
+updateStats();
+document.getElementById("currentAvatar").innerText=avatar;
+alert("Avatar Purchased!");
+}else{
+alert("Not enough coins!");
+}
+}
+
+</script>
+
+</body>
+  </html>
